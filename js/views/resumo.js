@@ -3,7 +3,7 @@ import { kpis, level, monthly, byPlatform, itemProfit, reviewCount, itemCost } f
 import { icon, eur, eur0, signed, cls, pct, esc, fmtMonth, on, ago } from '../ui.js';
 import { registerView, go, switchTab } from '../nav.js';
 import { openItem } from '../item-sheet.js';
-import { importBackup } from './mais.js';
+import { importBackup, reinstallBanner } from './mais.js';
 
 const LVL_COLOR = { good: 'var(--green)', ok: 'var(--yellow)', warn: 'var(--orange)', bad: 'var(--red)' };
 
@@ -87,6 +87,7 @@ registerView('resumo', {
       right: `<button class="nav-btn" data-act="new-item" aria-label="Novo artigo">${icon('plus')}</button>`,
       html: `
       <div class="stagger">
+        ${reinstallBanner()}
         ${nReview ? `<button class="banner" data-act="goto-rever">
           <div class="icon-box" style="background:var(--orange)">${icon('alert')}</div>
           <div style="flex:1"><div class="b-title">${nReview} ${nReview === 1 ? 'registo' : 'registos'} para rever</div><div class="b-sub">Artigos importados sem estado e vendas por associar</div></div>

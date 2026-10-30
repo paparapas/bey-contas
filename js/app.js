@@ -2,7 +2,6 @@ import { load, subscribe } from './store.js';
 import { on, toast } from './ui.js';
 import { switchTab, refresh, start, go } from './nav.js';
 import { APP_VERSION } from './version.js';
-import { initViewport } from './viewport.js';
 import './views/resumo.js';
 import './views/artigos.js';
 import './views/colecao.js';
@@ -10,8 +9,6 @@ import './views/calculadora.js';
 import './views/mais.js';
 
 on('tab', (el) => switchTab(el.dataset.tab));
-
-initViewport();
 
 await load();
 subscribe(refresh);

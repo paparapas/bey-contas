@@ -1,11 +1,11 @@
 // "Mais" tab: orders, review inbox, exchange rate / VAT, backup & sync.
 import { state, upsert, remove, find, exportData, merge, setSettings, wipe, commit } from '../store.js';
 import { orderTotals, orderShare, itemCost, reviewCount, SOURCES, round2 } from '../calc.js';
-import { icon, eur, jpy, esc, on, seg, segTap, openSheet, toast, haptic, actionSheet, confirmDestructive, shareFile, pickFile, parseNum, numIn, fmtDate, today, ago, stepper } from '../ui.js';
-import { registerView, go, back, refresh } from '../nav.js';
+import { icon, eur, jpy, esc, on, seg, segTap, openSheet, toast, haptic, actionSheet, confirmDestructive, shareFile, pickFile, parseNum, numIn, fmtDate, today, ago } from '../ui.js';
+import { registerView, go, back, refresh, switchTab } from '../nav.js';
 import { openItem } from '../item-sheet.js';
 import { APP_VERSION, CHANGELOG } from '../version.js';
-import { apply, measure, manualOffset, setManualOffset } from '../viewport.js';
+import { measure } from '../viewport.js';
 
 const iconBox = (name, color) => `<span class="icon-box" style="background:${color}">${icon(name)}</span>`;
 const navRow = (act, ic, color, title, detail = '', extra = '') => `<button class="row" data-act="${act}" ${extra} style="--inset:57px">
@@ -36,20 +36,30 @@ registerView('mais', {
 });
 on('goto', (el) => go(el.dataset.view));
 
-// ---------- Screen fit (tab bar position) ----------
+// ---------- Screen diagnostics ----------
+/** Banner shown when this install still has the iOS 26 short-screen problem. */
+export function reinstallBanner() {
+  if (!measure().needsReinstall) return '';
+  return `<button class="banner" data-act="goto-novidades" style="background:color-mix(in srgb,var(--orange) 14%,var(--card))">
+    <div class="icon-box" style="background:var(--orange)">${icon('refresh')}</div>
+    <div style="flex:1"><div class="b-title">Volta a instalar a app</div><div class="b-sub">Para a barra de baixo encostar ao fundo do ecrã. Faz primeiro uma cópia dos dados.</div></div>
+    ${icon('chevR', 'chev')}</button>`;
+}
+on('goto-novidades', () => { switchTab('mais'); go('novidades'); });
+
 function screenSection() {
-  const m = apply();
+  const m = measure();
   const kv = (k, v) => `<div class="kv"><span>${k}</span><span class="num">${esc(String(v))}</span></div>`;
   return `
-    <div class="section">
-      <div class="section-header">Ajuste da barra inferior</div>
-      <div class="list">
-        <div class="field"><span class="f-label">Descer a barra</span>
-          <span style="flex:1;text-align:right;font-weight:600" class="num">${m.drop} pt</span>${stepper('bar-adjust', '', m.drop)}</div>
-        ${m.manual !== null ? '<button class="row action" data-act="bar-auto"><span>Voltar ao automático</span></button>' : ''}
-      </div>
-      <div class="section-footer">${m.manual !== null ? 'Ajuste manual guardado neste dispositivo.' : `Automático (${m.auto} pt).`} Se a barra não encostar ao fundo do ecrã, usa + até ficar certa.</div>
-    </div>
+    ${m.needsReinstall ? `<div class="section">
+      <div class="section-header">Voltar a instalar</div>
+      <div class="list"><div class="kv" style="display:block;color:var(--label);line-height:1.4">
+        Esta instalação foi feita com uma definição que, no iOS 26, deixa uma faixa vazia no fundo do ecrã. Para corrigir:<br>
+        1. Mais › Dados › <b>Partilhar cópia</b> e guarda o ficheiro (ex.: Ficheiros).<br>
+        2. Mantém o ícone premido › <b>Remover app</b> (apaga os dados desta instalação).<br>
+        3. No Safari, abre o site › Partilhar › <b>Adicionar ao ecrã principal</b>.<br>
+        4. Na app nova: Mais › Dados › <b>Importar cópia</b>.
+      </div></div></div>` : ''}
     <div class="section">
       <div class="section-header">Diagnóstico do ecrã</div>
       <div class="list">
@@ -57,21 +67,13 @@ function screenSection() {
         ${kv('Ecrã', m.screen)}
         ${kv('Janela', m.inner)}
         ${kv('Área visível', m.visual ?? '—')}
-        ${kv('Documento', m.docH)}
-        ${kv('Fundo dos fixos', m.fixedBottom)}
+        ${kv('Fundo da app', m.fixedBottom)}
         ${kv('Margem topo / fundo', `${m.insetTop} / ${m.insetBottom}`)}
-        ${kv('Descida aplicada', `${m.drop} (auto ${m.auto})`)}
+        ${kv('Faixa em falta', m.shortBy)}
       </div>
       <div class="section-footer">Se algo estiver mal no ecrã, envia uma captura desta secção.</div>
     </div>`;
 }
-on('bar-adjust', (el) => {
-  const cur = manualOffset() ?? measure().auto;
-  setManualOffset(Math.max(-60, Math.min(160, cur + 2 * +el.dataset.d)));
-  haptic();
-  refresh();
-});
-on('bar-auto', () => { setManualOffset(null); refresh(); });
 
 // ---------- Novidades (version history) ----------
 registerView('novidades', {

@@ -1,5 +1,5 @@
 // Offline cache. Bump VERSION on every release so installed apps update.
-const VERSION = '1.3'; // keep equal to APP_VERSION in js/version.js
+const VERSION = '1.4'; // keep equal to APP_VERSION in js/version.js
 const SHELL = `shell-${VERSION}`;
 const RUNTIME = 'runtime';
 const FILES = [

@@ -1,12 +1,10 @@
-// Keeps the tab bar on the real bottom of the screen in the installed iPhone app.
-// iOS 26 can end fixed elements above the screen bottom (on an iPhone 15 Pro Max
-// the bar stopped at ~874pt of 932pt). We measure the gap and move the fixed
-// layers (#app, #tabbar, #sheets) down by --vp-drop. If the measurement is wrong
-// on some device, a manual offset (Mais › Versão › Ajuste da barra) overrides it.
+// Screen diagnostics for the installed app (Mais › Versão).
+// On iOS 26 an app added to the Home Screen while the page asked for the
+// translucent status bar (versions ≤ 1.3) is one status-bar height short and
+// iOS leaves the bottom strip unpainted. Nothing in CSS can draw there; the
+// app has to be removed and added again so iOS picks up the default status bar.
 
-const KEY = 'bar-offset';
 let probe, insetProbe;
-
 function ensureProbes() {
   if (probe) return;
   probe = document.createElement('div');
@@ -18,48 +16,25 @@ function ensureProbes() {
 
 export const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
 
-export function manualOffset() {
-  try { const v = localStorage.getItem(KEY); return v === null ? null : +v; } catch { return null; }
-}
-export function setManualOffset(v) {
-  try { if (v === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, String(v)); } catch { /* private mode */ }
-  apply();
-}
-
-/** What the browser reports; shown in Mais › Versão to diagnose a device. */
 export function measure() {
   ensureProbes();
   const cs = getComputedStyle(insetProbe);
   const portrait = innerHeight > innerWidth;
   const fixedBottom = Math.round(probe.getBoundingClientRect().top);
+  const insetTop = parseFloat(cs.paddingTop) || 0;
   const screenH = portrait ? screen.height : screen.width;
-  const auto = isStandalone() && portrait ? Math.min(Math.max(screenH - fixedBottom, 0), 120) : 0;
+  // Translucent install: the page starts under the status bar (insetTop > 0)
+  // but ends that same height above the bottom of the screen.
+  const shortBy = isStandalone() && portrait && screenH ? screenH - fixedBottom : 0;
   return {
     standalone: isStandalone(),
     screen: `${screen.width}×${screen.height}`,
     inner: `${innerWidth}×${innerHeight}`,
     visual: window.visualViewport ? Math.round(visualViewport.height) : null,
-    docH: document.documentElement.clientHeight,
     fixedBottom,
-    insetTop: parseFloat(cs.paddingTop) || 0,
+    insetTop,
     insetBottom: parseFloat(cs.paddingBottom) || 0,
-    auto,
-    manual: manualOffset(),
+    shortBy,
+    needsReinstall: insetTop > 0 && shortBy > 10,
   };
-}
-
-export function apply() {
-  const m = measure();
-  const drop = m.manual ?? m.auto;
-  document.documentElement.style.setProperty('--vp-drop', `${drop}px`);
-  return { ...m, drop };
-}
-
-export function initViewport() {
-  apply();
-  addEventListener('resize', apply);
-  addEventListener('orientationchange', () => setTimeout(apply, 300));
-  // iOS sometimes settles the viewport a moment after launch.
-  setTimeout(apply, 500);
-  setTimeout(apply, 1500);
 }

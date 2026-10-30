@@ -30,10 +30,6 @@
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
-  /* Set by app.js: how far above the real screen bottom iOS ends fixed elements
-     in the installed app (iOS 26 leaves out the status-bar height). Fixed layers
-     are stretched / moved down by this much. */
-  --vp-drop: 0px;
   /* Like the native tab bar, labels sit just above the home indicator. */
   --tab-pad: max(4px, calc(var(--sab) - 14px));
   --tabbar-h: calc(49px + var(--tab-pad));
@@ -93,7 +89,7 @@ svg.i { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; s
 
 /* ---------- App frame: shrinks behind sheets like iOS cards ---------- */
 #app {
-  position: fixed; inset: 0; bottom: calc(-1 * var(--vp-drop));
+  position: fixed; inset: 0;
   background: var(--bg);
   overflow: hidden;
   transition: transform 0.5s var(--spring), border-radius 0.5s var(--spring), filter 0.5s var(--spring);
@@ -101,7 +97,7 @@ svg.i { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; s
 }
 body.sheet-open #app { transform: translateY(calc(var(--sat) + 10px)) scale(0.93); border-radius: 12px; filter: brightness(0.92); }
 @media (prefers-color-scheme: dark) { body.sheet-open #app { filter: brightness(0.7); } }
-body.sheet-open #tabbar { transform: translateY(calc(100% + var(--vp-drop))); }
+body.sheet-open #tabbar { transform: translateY(100%); }
 #screens { position: absolute; inset: 0; }
 
 /* ---------- Screens & navigation stack ---------- */
@@ -153,7 +149,7 @@ body.sheet-open #tabbar { transform: translateY(calc(100% + var(--vp-drop))); }
 
 /* ---------- Tab bar ---------- */
 #tabbar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; transform: translateY(var(--vp-drop));
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   height: var(--tabbar-h); padding-bottom: var(--tab-pad);
   display: flex;
   background: var(--bar);
@@ -298,7 +294,7 @@ button.tile:active { transform: scale(0.96); }
 .ph { width: 72px; height: 72px; border-radius: 12px; background: var(--fill); display: grid; place-items: center; color: var(--label-2); }
 
 /* ---------- Sheets ---------- */
-#sheets { position: fixed; inset: 0; bottom: calc(-1 * var(--vp-drop)); z-index: 50; pointer-events: none; }
+#sheets { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
 .sheet-backdrop { position: absolute; inset: 0; background: var(--dim); opacity: 0; transition: opacity 0.5s var(--spring); pointer-events: none; }
 .sheet-backdrop.show { opacity: 1; pointer-events: auto; }
 .sheet {

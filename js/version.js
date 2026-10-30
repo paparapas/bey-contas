@@ -1,8 +1,15 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.3';
+export const APP_VERSION = '1.4';
 
 export const CHANGELOG = [
+  {
+    version: '1.4', date: '2026-10-30',
+    notes: [
+      'Corrigida a faixa vazia no fundo do ecrã no iPhone (iOS 26): a app usa agora a barra de estado normal. É preciso voltar a instalar a app uma vez.',
+      'Removido o ajuste manual da barra da versão 1.3, que deixou de ser preciso.',
+    ],
+  },
   {
     version: '1.3', date: '2026-10-30',
     notes: [
