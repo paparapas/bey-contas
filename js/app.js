@@ -9,6 +9,18 @@ import './views/mais.js';
 
 on('tab', (el) => switchTab(el.dataset.tab));
 
+// Some iOS versions end the installed app's viewport above the home indicator
+// and still report the full bottom inset, which lifted the tab bar twice.
+// Measure how much shorter the viewport is than the screen and let CSS subtract it.
+function fixViewportGap() {
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  const portrait = innerHeight > innerWidth;
+  const gap = standalone && portrait ? Math.max(0, Math.round(screen.height - innerHeight)) : 0;
+  document.documentElement.style.setProperty('--vp-gap', `${gap}px`);
+}
+fixViewportGap();
+addEventListener('resize', fixViewportGap);
+
 await load();
 subscribe(refresh);
 start();

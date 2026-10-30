@@ -267,10 +267,17 @@ export function swipeRow(rowHtml, trailing = [], leading = []) {
     ${rowHtml}
   </div>`;
 }
+// Keeps the actions visible while the row slides back over them.
+function settle(w) {
+  w.classList.add('settling');
+  clearTimeout(w._settle);
+  w._settle = setTimeout(() => w.classList.remove('settling'), 420);
+}
 function closeSwipes(except) {
   document.querySelectorAll('.row-wrap.swiped').forEach((w) => {
     if (w === except) return;
     w.classList.remove('swiped');
+    settle(w);
     w.querySelector('.row').style.transform = '';
   });
 }
@@ -298,6 +305,7 @@ function closeSwipes(except) {
     if (t < min) t = min + (t - min) * 0.3;
     if (t > max) t = max + (t - max) * 0.3;
     dx = t;
+    wrap.dataset.dir = t < 0 ? 'right' : 'left'; // only the side being uncovered is shown
     wrap.classList.add('dragging');
     row.style.transform = `translateX(${t}px)`;
   }, { passive: false });
@@ -309,7 +317,7 @@ function closeSwipes(except) {
     else if (dx > width.max / 2) target = width.max;
     row.style.transform = target ? `translateX(${target}px)` : '';
     wrap.classList.toggle('swiped', target !== 0);
-    if (target) haptic();
+    if (target) haptic(); else settle(wrap);
     wrap = null;
   });
 })();

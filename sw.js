@@ -1,5 +1,5 @@
 // Offline cache. Bump VERSION on every release so installed apps update.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = `shell-${VERSION}`;
 const RUNTIME = 'runtime';
 const FILES = [
@@ -10,7 +10,8 @@ const FILES = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(FILES)));
+  // cache: 'reload' skips the browser's HTTP cache, so a new version never stores old files.
+  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', (e) => {

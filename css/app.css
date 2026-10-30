@@ -29,8 +29,14 @@
 
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --sat: env(safe-area-inset-top, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
-  --tabbar-h: calc(50px + var(--sab));
+  /* Home-indicator inset. --vp-gap is set by app.js when iOS already shrank the
+     viewport above the home indicator, so the inset isn't counted twice. */
+  --sab: max(0px, calc(env(safe-area-inset-bottom, 0px) - var(--vp-gap, 0px)));
+  /* Like the native tab bar, labels sit just above the home indicator. */
+  --tab-pad: max(4px, calc(var(--sab) - 14px));
+  --tabbar-h: calc(49px + var(--tab-pad));
+  --bar-solid: #f9f9f9;
+  --row-press: #d1d1d6;
   color-scheme: light dark;
 }
 
@@ -55,13 +61,16 @@
     --teal: #40c8e0;
     --pink: #ff375f;
     --bar: rgba(22, 22, 24, 0.78);
+    --bar-solid: #161618;
+    --row-press: #3a3a3c;
     --dim: rgba(0, 0, 0, 0.6);
     --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   }
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: #000; }
+/* Anything iOS paints below the viewport matches the tab bar, never a black strip. */
+html, body { margin: 0; height: 100%; background: var(--bar-solid); }
 body {
   font-family: var(--font);
   font-size: 17px;
@@ -143,7 +152,7 @@ body.sheet-open #tabbar { transform: translateY(100%); }
 /* ---------- Tab bar ---------- */
 #tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-  height: var(--tabbar-h); padding-bottom: var(--sab);
+  height: var(--tabbar-h); padding-bottom: var(--tab-pad);
   display: flex;
   background: var(--bar);
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
@@ -179,7 +188,7 @@ body.sheet-open #tabbar { transform: translateY(100%); }
 .row + .row::before, .row-wrap + .row-wrap::before { content: ""; position: absolute; top: 0; right: 0; left: var(--inset, 16px); height: 0.5px; background: var(--sep); z-index: 1; }
 .row-wrap { position: relative; overflow: hidden; }
 .row-wrap .row::before { display: none; }
-.row.tap:active, button.row:active { background: var(--fill-2); transition: none; }
+.row.tap:active, button.row:active { background: var(--row-press); transition: none; }
 button.row { transition: background 0.3s; }
 .row .body { flex: 1; min-width: 0; padding: 11px 0; }
 .row .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -197,7 +206,9 @@ button.row { transition: background 0.3s; }
 /* Swipe actions */
 .row-wrap .row { transition: transform 0.4s var(--spring); z-index: 1; }
 .row-wrap.dragging .row { transition: none; }
-.swipe-actions { position: absolute; top: 0; bottom: 0; display: flex; }
+.swipe-actions { position: absolute; top: 0; bottom: 0; display: flex; visibility: hidden; }
+/* Actions only exist while you swipe, so scrolling never shows red or green. */
+.row-wrap.dragging .swipe-actions, .row-wrap.swiped .swipe-actions, .row-wrap.settling .swipe-actions { visibility: visible; }
 .swipe-actions.right { right: 0; }
 .swipe-actions.left { left: 0; }
 .swipe-actions button { color: #fff; font-size: 15px; font-weight: 500; min-width: 80px; padding: 0 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
@@ -405,3 +416,4 @@ button.tile:active { transform: scale(0.96); }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 .chip.sm { height: 30px; padding: 0 12px; font-size: 14px; }
+.row-wrap[data-dir="right"] .swipe-actions.left, .row-wrap[data-dir="left"] .swipe-actions.right { visibility: hidden; }
