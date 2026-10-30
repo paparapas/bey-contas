@@ -1,10 +1,11 @@
 // "Mais" tab: orders, review inbox, exchange rate / VAT, backup & sync.
 import { state, upsert, remove, find, exportData, merge, setSettings, wipe, commit } from '../store.js';
 import { orderTotals, orderShare, itemCost, reviewCount, SOURCES, round2 } from '../calc.js';
-import { icon, eur, jpy, esc, on, seg, segTap, openSheet, toast, haptic, actionSheet, confirmDestructive, shareFile, pickFile, parseNum, numIn, fmtDate, today, ago } from '../ui.js';
+import { icon, eur, jpy, esc, on, seg, segTap, openSheet, toast, haptic, actionSheet, confirmDestructive, shareFile, pickFile, parseNum, numIn, fmtDate, today, ago, stepper } from '../ui.js';
 import { registerView, go, back, refresh } from '../nav.js';
 import { openItem } from '../item-sheet.js';
 import { APP_VERSION, CHANGELOG } from '../version.js';
+import { apply, measure, manualOffset, setManualOffset } from '../viewport.js';
 
 const iconBox = (name, color) => `<span class="icon-box" style="background:${color}">${icon(name)}</span>`;
 const navRow = (act, ic, color, title, detail = '', extra = '') => `<button class="row" data-act="${act}" ${extra} style="--inset:57px">
@@ -35,6 +36,43 @@ registerView('mais', {
 });
 on('goto', (el) => go(el.dataset.view));
 
+// ---------- Screen fit (tab bar position) ----------
+function screenSection() {
+  const m = apply();
+  const kv = (k, v) => `<div class="kv"><span>${k}</span><span class="num">${esc(String(v))}</span></div>`;
+  return `
+    <div class="section">
+      <div class="section-header">Ajuste da barra inferior</div>
+      <div class="list">
+        <div class="field"><span class="f-label">Descer a barra</span>
+          <span style="flex:1;text-align:right;font-weight:600" class="num">${m.drop} pt</span>${stepper('bar-adjust', '', m.drop)}</div>
+        ${m.manual !== null ? '<button class="row action" data-act="bar-auto"><span>Voltar ao automático</span></button>' : ''}
+      </div>
+      <div class="section-footer">${m.manual !== null ? 'Ajuste manual guardado neste dispositivo.' : `Automático (${m.auto} pt).`} Se a barra não encostar ao fundo do ecrã, usa + até ficar certa.</div>
+    </div>
+    <div class="section">
+      <div class="section-header">Diagnóstico do ecrã</div>
+      <div class="list">
+        ${kv('App instalada', m.standalone ? 'sim' : 'não')}
+        ${kv('Ecrã', m.screen)}
+        ${kv('Janela', m.inner)}
+        ${kv('Área visível', m.visual ?? '—')}
+        ${kv('Documento', m.docH)}
+        ${kv('Fundo dos fixos', m.fixedBottom)}
+        ${kv('Margem topo / fundo', `${m.insetTop} / ${m.insetBottom}`)}
+        ${kv('Descida aplicada', `${m.drop} (auto ${m.auto})`)}
+      </div>
+      <div class="section-footer">Se algo estiver mal no ecrã, envia uma captura desta secção.</div>
+    </div>`;
+}
+on('bar-adjust', (el) => {
+  const cur = manualOffset() ?? measure().auto;
+  setManualOffset(Math.max(-60, Math.min(160, cur + 2 * +el.dataset.d)));
+  haptic();
+  refresh();
+});
+on('bar-auto', () => { setManualOffset(null); refresh(); });
+
 // ---------- Novidades (version history) ----------
 registerView('novidades', {
   render() {
@@ -43,6 +81,7 @@ registerView('novidades', {
       html: `
         <div class="hero" style="text-align:center"><div class="label" style="justify-content:center">Versão instalada</div>
           <div class="value num">${APP_VERSION}</div></div>
+        ${screenSection()}
         ${CHANGELOG.map((c) => `<div class="section">
           <div class="section-header"><span>Versão ${c.version}</span><span style="text-transform:none">${fmtDate(c.date)}</span></div>
           <div class="list">${c.notes.map((n) => `<div class="kv"><span style="color:var(--label)">${esc(n)}</span></div>`).join('')}</div>

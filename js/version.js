@@ -1,8 +1,15 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.2';
+export const APP_VERSION = '1.3';
 
 export const CHANGELOG = [
+  {
+    version: '1.3', date: '2026-10-30',
+    notes: [
+      'Ajuste manual da barra inferior em Mais › Versão, guardado em cada dispositivo.',
+      'Diagnóstico do ecrã para corrigir a posição da barra no iPhone.',
+    ],
+  },
   {
     version: '1.2', date: '2026-10-30',
     notes: [
