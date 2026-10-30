@@ -1,8 +1,15 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.4';
+export const APP_VERSION = '1.5';
 
 export const CHANGELOG = [
+  {
+    version: '1.5', date: '2026-10-31',
+    notes: [
+      'Stock = só os artigos do Excel com valor no Predicted Ongoing e sem preço de venda; os restantes não vendidos passam a Guardado.',
+      'A lista “Artigos por classificar” do Rever desaparece; ficam só as vendas Vinted/Wallapop por associar.',
+    ],
+  },
   {
     version: '1.4', date: '2026-10-30',
     notes: [

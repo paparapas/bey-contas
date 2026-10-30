@@ -2,6 +2,7 @@ import { load, subscribe } from './store.js';
 import { on, toast } from './ui.js';
 import { switchTab, refresh, start, go } from './nav.js';
 import { APP_VERSION } from './version.js';
+import { migrateStockRule } from './migrations.js';
 import './views/resumo.js';
 import './views/artigos.js';
 import './views/colecao.js';
@@ -11,8 +12,10 @@ import './views/mais.js';
 on('tab', (el) => switchTab(el.dataset.tab));
 
 await load();
+const migrated = migrateStockRule();
 subscribe(refresh);
 start();
+if (migrated) setTimeout(() => toast(`Stock corrigido: ${migrated} artigos importados atualizados`, { icon: 'box', ms: 4000 }), 1200);
 
 // Tell the user when the app was updated since the last time it was opened.
 try {

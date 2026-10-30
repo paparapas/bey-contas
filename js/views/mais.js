@@ -6,6 +6,7 @@ import { registerView, go, back, refresh, switchTab } from '../nav.js';
 import { openItem } from '../item-sheet.js';
 import { APP_VERSION, CHANGELOG } from '../version.js';
 import { measure } from '../viewport.js';
+import { migrateStockRule } from '../migrations.js';
 
 const iconBox = (name, color) => `<span class="icon-box" style="background:${color}">${icon(name)}</span>`;
 const navRow = (act, ic, color, title, detail = '', extra = '') => `<button class="row" data-act="${act}" ${extra} style="--inset:57px">
@@ -324,6 +325,7 @@ export async function importBackup() {
   try {
     const data = JSON.parse(await file.text());
     const r = merge(data);
+    migrateStockRule(); // an old Excel import file gets the current stock rule too
     haptic('success');
     toast(r.added + r.updated + r.removed ? `${r.added} novos · ${r.updated} atualizados · ${r.removed} apagados` : 'Já estava tudo igual', { ms: 4000 });
   } catch (e) {
