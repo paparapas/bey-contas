@@ -4,6 +4,7 @@ import { orderTotals, orderShare, itemCost, reviewCount, SOURCES, round2 } from 
 import { icon, eur, jpy, esc, on, seg, segTap, openSheet, toast, haptic, actionSheet, confirmDestructive, shareFile, pickFile, parseNum, numIn, fmtDate, today, ago } from '../ui.js';
 import { registerView, go, back, refresh } from '../nav.js';
 import { openItem } from '../item-sheet.js';
+import { APP_VERSION, CHANGELOG } from '../version.js';
 
 const iconBox = (name, color) => `<span class="icon-box" style="background:${color}">${icon(name)}</span>`;
 const navRow = (act, ic, color, title, detail = '', extra = '') => `<button class="row" data-act="${act}" ${extra} style="--inset:57px">
@@ -25,11 +26,30 @@ registerView('mais', {
           ${navRow('goto', 'yen', 'var(--green)', 'Câmbio e IVA', `1 € = ${jpy(1 / state.settings.rate)}`, 'data-view="cambio"')}
           ${navRow('goto', 'share', 'var(--blue)', 'Dados e sincronização', ago(state.settings.lastBackup), 'data-view="dados"')}
         </div></div>
+        <div class="section"><div class="list">
+          ${navRow('goto', 'sparkle', 'var(--indigo)', 'Versão', APP_VERSION, 'data-view="novidades"')}
+        </div></div>
         <div class="section-footer" style="text-align:center;padding-top:0">Bey Contas · os dados ficam neste dispositivo.<br>Catálogo de peças: BBPT Hub.</div>`,
     };
   },
 });
 on('goto', (el) => go(el.dataset.view));
+
+// ---------- Novidades (version history) ----------
+registerView('novidades', {
+  render() {
+    return {
+      title: 'Novidades',
+      html: `
+        <div class="hero" style="text-align:center"><div class="label" style="justify-content:center">Versão instalada</div>
+          <div class="value num">${APP_VERSION}</div></div>
+        ${CHANGELOG.map((c) => `<div class="section">
+          <div class="section-header"><span>Versão ${c.version}</span><span style="text-transform:none">${fmtDate(c.date)}</span></div>
+          <div class="list">${c.notes.map((n) => `<div class="kv"><span style="color:var(--label)">${esc(n)}</span></div>`).join('')}</div>
+        </div>`).join('')}`,
+    };
+  },
+});
 on('nav-back', () => back());
 
 // ---------- Encomendas ----------

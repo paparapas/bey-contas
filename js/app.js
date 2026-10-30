@@ -1,6 +1,7 @@
 import { load, subscribe } from './store.js';
 import { on, toast } from './ui.js';
-import { switchTab, refresh, start } from './nav.js';
+import { switchTab, refresh, start, go } from './nav.js';
+import { APP_VERSION } from './version.js';
 import './views/resumo.js';
 import './views/artigos.js';
 import './views/colecao.js';
@@ -9,21 +10,38 @@ import './views/mais.js';
 
 on('tab', (el) => switchTab(el.dataset.tab));
 
-// Some iOS versions end the installed app's viewport above the home indicator
-// and still report the full bottom inset, which lifted the tab bar twice.
-// Measure how much shorter the viewport is than the screen and let CSS subtract it.
-function fixViewportGap() {
+// In the installed app, iOS 26 ends fixed elements one status-bar height above
+// the real bottom of the screen (on an iPhone 15 Pro Max: at 874pt of 932pt).
+// Find where a fixed element's bottom really lands and move the fixed layers
+// down by the difference.
+const probe = document.createElement('div');
+probe.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:0;pointer-events:none';
+document.body.appendChild(probe);
+function fixViewportDrop() {
   const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   const portrait = innerHeight > innerWidth;
-  const gap = standalone && portrait ? Math.max(0, Math.round(screen.height - innerHeight)) : 0;
-  document.documentElement.style.setProperty('--vp-gap', `${gap}px`);
+  const fixedBottom = probe.getBoundingClientRect().top;
+  const drop = standalone && portrait ? Math.round(screen.height - fixedBottom) : 0;
+  document.documentElement.style.setProperty('--vp-drop', `${Math.min(Math.max(drop, 0), 120)}px`);
 }
-fixViewportGap();
-addEventListener('resize', fixViewportGap);
+fixViewportDrop();
+addEventListener('resize', fixViewportDrop);
+addEventListener('orientationchange', () => setTimeout(fixViewportDrop, 300));
 
 await load();
 subscribe(refresh);
 start();
+
+// Tell the user when the app was updated since the last time it was opened.
+try {
+  const seen = localStorage.getItem('seen-version');
+  if (seen && seen !== APP_VERSION) {
+    setTimeout(() => toast(`Atualizado para a versão ${APP_VERSION}`, {
+      icon: 'sparkle', action: 'Novidades', ms: 6000, onAction: () => { switchTab('mais'); go('novidades'); },
+    }), 600);
+  }
+  localStorage.setItem('seen-version', APP_VERSION);
+} catch { /* private mode */ }
 
 // Offline + automatic updates. A new version is fetched in the background and
 // applied the next time the app is opened (or right away from the toast).

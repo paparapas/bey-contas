@@ -1,10 +1,10 @@
 // Offline cache. Bump VERSION on every release so installed apps update.
-const VERSION = 'v2';
+const VERSION = '1.2'; // keep equal to APP_VERSION in js/version.js
 const SHELL = `shell-${VERSION}`;
 const RUNTIME = 'runtime';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/app.js', 'js/store.js', 'js/calc.js', 'js/ui.js', 'js/nav.js', 'js/item-sheet.js',
+  'js/app.js', 'js/version.js', 'js/store.js', 'js/calc.js', 'js/ui.js', 'js/nav.js', 'js/item-sheet.js',
   'js/views/resumo.js', 'js/views/artigos.js', 'js/views/colecao.js', 'js/views/calculadora.js', 'js/views/mais.js',
   'data/parts.json', 'img/icon-180.png', 'img/icon-192.png', 'img/icon-512.png',
 ];

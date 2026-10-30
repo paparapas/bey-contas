@@ -12,7 +12,7 @@ Mais → Dados → **Partilhar cópia** (AirDrop, WhatsApp, Drive…) e, no outr
 
 ## Publicar uma nova versão
 1. Alterar os ficheiros.
-2. Aumentar `VERSION` em `sw.js` (ex.: `v2`).
+2. Aumentar a versão em `js/version.js` (`APP_VERSION` + uma entrada em `CHANGELOG`) e o mesmo número em `VERSION` no `sw.js`.
 3. `git commit` + `git push` — o GitHub Pages atualiza e as apps instaladas recebem a versão nova ao abrir.
 
 Os dados pessoais (ficheiros `.json` de cópia) nunca são enviados para o repositório.
