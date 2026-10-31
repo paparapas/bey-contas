@@ -6,7 +6,7 @@ import { registerView, go, back, refresh, switchTab } from '../nav.js';
 import { openItem } from '../item-sheet.js';
 import { APP_VERSION, CHANGELOG } from '../version.js';
 import { measure } from '../viewport.js';
-import { migrateStockRule } from '../migrations.js';
+import { migrateStockRule, applyDates } from '../migrations.js';
 
 const iconBox = (name, color) => `<span class="icon-box" style="background:${color}">${icon(name)}</span>`;
 const navRow = (act, ic, color, title, detail = '', extra = '') => `<button class="row" data-act="${act}" ${extra} style="--inset:57px">
@@ -324,6 +324,12 @@ export async function importBackup() {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
+    if (data?.app === 'bey-contas' && data.kind === 'dates') {
+      const n = applyDates(data.dates || {});
+      haptic('success');
+      toast(n ? `Datas preenchidas em ${n} artigos` : 'Os artigos já tinham datas', { icon: 'check', ms: 4000 });
+      return;
+    }
     const r = merge(data);
     migrateStockRule(); // an old Excel import file gets the current stock rule too
     haptic('success');

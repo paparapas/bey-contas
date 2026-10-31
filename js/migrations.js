@@ -27,3 +27,24 @@ export function migrateStockRule() {
   if (changed) commit();
   return changed;
 }
+
+/**
+ * Fills in purchase / sale dates from a dates file ({ id: { buy, sale } }),
+ * e.g. the one recovered from the Excel's OneDrive version history. Only empty
+ * dates are filled, so dates typed in the app are never overwritten.
+ * Returns how many items changed.
+ */
+export function applyDates(dates) {
+  let changed = 0;
+  const now = Date.now();
+  for (const it of state.items) {
+    const d = dates[it.id];
+    if (!d) continue;
+    let touched = false;
+    if (d.buy && !it.buyDate) { it.buyDate = d.buy; touched = true; }
+    if (d.sale && it.status === 'sold' && !it.saleDate) { it.saleDate = d.sale; touched = true; }
+    if (touched) { it.updatedAt = now; changed++; }
+  }
+  if (changed) commit();
+  return changed;
+}

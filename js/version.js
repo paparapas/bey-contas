@@ -1,8 +1,15 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.5';
+export const APP_VERSION = '1.6';
 
 export const CHANGELOG = [
+  {
+    version: '1.6', date: '2026-10-31',
+    notes: [
+      'Importar cópia aceita um ficheiro de datas: preenche datas de compra e venda vazias sem mexer no resto.',
+      'Datas recuperadas do histórico de versões do Excel no OneDrive (ficam no gráfico Lucro por mês).',
+    ],
+  },
   {
     version: '1.5', date: '2026-10-31',
     notes: [
