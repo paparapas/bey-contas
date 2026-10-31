@@ -7,6 +7,7 @@ import { openItem } from '../item-sheet.js';
 import { APP_VERSION, CHANGELOG } from '../version.js';
 import { measure } from '../viewport.js';
 import { migrateStockRule, applyDates } from '../migrations.js';
+import { buildWorkbook } from '../export-excel.js';
 
 const iconBox = (name, color) => `<span class="icon-box" style="background:${color}">${icon(name)}</span>`;
 const navRow = (act, ic, color, title, detail = '', extra = '') => `<button class="row" data-act="${act}" ${extra} style="--inset:57px">
@@ -356,8 +357,9 @@ registerView('dados', {
           <b>Como passar para outro dispositivo:</b> toca em “Partilhar cópia” e envia o ficheiro por AirDrop, WhatsApp, e-mail ou guarda no iCloud/Google Drive. No outro dispositivo, abre o Bey Contas e toca em “Importar cópia”.<br><br>
           A importação <b>junta</b> os dados: fica sempre a versão mais recente de cada artigo e nada é duplicado. Podes importar nos dois sentidos.</div></div>
         <div class="section"><div class="section-header">Exportar</div><div class="list">
-          ${navRow('export-csv', 'doc', 'var(--green)', 'Folha de cálculo (CSV)')}
-        </div><div class="section-footer">Abre no Excel ou Numbers.</div></div>
+          ${navRow('export-xlsx', 'doc', 'var(--green)', 'Excel (.xlsx)')}
+          ${navRow('export-csv', 'doc', 'var(--teal)', 'Folha simples (CSV)')}
+        </div><div class="section-footer">O Excel tem o formato da tua folha original: compras, vendas, Predicted Ongoing e totais com fórmulas, mais folhas por mês, plataformas, encomendas e coleção. Para restaurar a app usa sempre a cópia (.json).</div></div>
         <div class="section"><div class="list"><button class="row danger" data-act="wipe">Apagar todos os dados deste dispositivo</button></div></div>`,
     };
   },
@@ -368,6 +370,12 @@ on('backup-share', async () => {
   if (res !== 'cancelled') { setSettings({ lastBackup: Date.now() }); toast(res === 'shared' ? 'Cópia partilhada' : 'Cópia descarregada'); }
 });
 on('import-backup', () => importBackup());
+on('export-xlsx', async () => {
+  try {
+    const res = await shareFile(`bey-contas-${today()}.xlsx`, buildWorkbook(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    if (res !== 'cancelled') toast(res === 'shared' ? 'Excel partilhado' : 'Excel descarregado', { icon: 'doc' });
+  } catch (e) { console.error(e); toast('Não foi possível criar o Excel', { icon: 'alert' }); }
+});
 on('export-csv', () => {
   const cols = ['Nome', 'Estado', 'Custo EUR', 'Custo JPY', 'Portes/taxas EUR', 'Custo total EUR', 'Data compra', 'Origem', 'Encomenda', 'Preço previsto', 'Preço venda', 'Taxas venda', 'Lucro', 'Plataforma', 'Data venda', 'Notas'];
   const st = { stock: 'Em stock', sold: 'Vendido', kept: 'Guardado', gifted: 'Oferta' };

@@ -1,6 +1,6 @@
 import { state } from '../store.js';
-import { kpis, level, monthly, byPlatform, itemProfit, reviewCount, itemCost } from '../calc.js';
-import { icon, eur, eur0, signed, cls, pct, esc, fmtMonth, on, ago } from '../ui.js';
+import { kpis, level, monthly, byPlatform, itemProfit, reviewCount, itemCost, itemNet, soldInMonth, boughtInMonth } from '../calc.js';
+import { icon, eur, eur0, signed, cls, pct, esc, fmtMonth, fmtDate, on, ago, haptic, openSheet } from '../ui.js';
 import { registerView, go, switchTab } from '../nav.js';
 import { openItem } from '../item-sheet.js';
 import { importBackup, reinstallBanner } from './mais.js';
@@ -21,32 +21,76 @@ function monthChart() {
   if (!data.some(([, m]) => m.sales)) {
     return `<div class="chart"><div class="empty">${icon('chart')}<br>Ainda sem datas.<br><span style="font-size:13px">Adiciona datas de compra e venda aos artigos para veres a evolução mês a mês.</span></div></div>`;
   }
-  const W = 340, H = 150, pad = 18, bw = Math.min(22, (W - 20) / data.length - 8);
+  // Layout: value labels on top, bars, then month + year labels underneath.
+  const W = 340, TOP = 16, H = 150, step = (W - 8) / data.length, bw = Math.min(22, step - 6);
   const vals = data.map(([, m]) => m.profit);
   const max = Math.max(1, ...vals.map(Math.abs));
   const hasNeg = vals.some((v) => v < 0);
-  const zero = hasNeg ? H / 2 : H - pad;
-  const scale = (hasNeg ? H / 2 - pad : H - pad * 2) / max;
-  const step = (W - 20) / data.length;
+  const zero = hasNeg ? TOP + (H - TOP) / 2 : H;
+  const scale = (hasNeg ? (H - TOP) / 2 - 12 : H - TOP - 4) / max;
   const bars = data.map(([k, m], i) => {
-    const x = 10 + i * step + (step - bw) / 2;
-    const h = Math.max(2, Math.abs(m.profit) * scale);
+    const x = 4 + i * step + (step - bw) / 2, cx = x + bw / 2;
+    const h = m.profit ? Math.max(2, Math.abs(m.profit) * scale) : 0;
     const y = m.profit >= 0 ? zero - h : zero;
-    return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="4" fill="${m.profit >= 0 ? 'var(--green)' : 'var(--red)'}" style="transform-origin:${x}px ${zero}px;animation:barUp .8s cubic-bezier(.32,.72,0,1) ${i * 0.04}s both"/>
-      <text class="axis" x="${x + bw / 2}" y="${H + 12}" text-anchor="middle">${fmtMonth(k)}</text>`;
+    const [yy, mm] = k.split('-');
+    const showYear = i === 0 || mm === '01';
+    const label = m.n ? `<text class="axis val" x="${cx}" y="${m.profit >= 0 ? y - 4 : y + h + 10}" text-anchor="middle">${Math.round(m.profit)}</text>` : '';
+    return `<g class="bar" data-act="month-open" data-month="${k}">
+      <rect x="${4 + i * step}" y="0" width="${step}" height="${H + 30}" fill="transparent"/>
+      ${h ? `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="4" fill="${m.profit >= 0 ? 'var(--green)' : 'var(--red)'}" style="transform-origin:${x}px ${zero}px;animation:barUp .8s cubic-bezier(.32,.72,0,1) ${i * 0.04}s both"/>` : ''}
+      ${label}
+      <text class="axis" x="${cx}" y="${H + 13}" text-anchor="middle">${fmtMonth(k)}</text>
+      ${showYear ? `<text class="axis yr" x="${cx}" y="${H + 25}" text-anchor="middle">${yy}</text>` : ''}
+    </g>`;
   }).join('');
   const total = vals.reduce((a, b) => a + b, 0);
   return `<div class="chart">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
       <span style="font-size:13px;color:var(--label-2);font-weight:500">Lucro por mês</span>
       <span class="num ${cls(total)}" style="font-weight:600">${signed(total)}</span>
     </div>
-    <svg viewBox="0 0 ${W} ${H + 16}">
+    <svg viewBox="0 0 ${W} ${H + 30}" class="month-chart">
       <style>@keyframes barUp{from{transform:scaleY(0)}}</style>
       <line class="grid" x1="0" x2="${W}" y1="${zero}" y2="${zero}"/>
       ${bars}
-    </svg></div>`;
+    </svg>
+    <div style="font-size:12px;color:var(--label-2);text-align:center;margin-top:2px">Toca num mês para ver as vendas</div></div>`;
 }
+
+// Sheet with one month's sales and purchases.
+function openMonth(ym) {
+  const sold = soldInMonth(ym).sort((a, b) => a.saleDate.localeCompare(b.saleDate));
+  const bought = boughtInMonth(ym).sort((a, b) => a.buyDate.localeCompare(b.buyDate));
+  const profit = sold.reduce((s, i) => s + itemProfit(i), 0);
+  const sales = sold.reduce((s, i) => s + itemNet(i), 0);
+  const spent = bought.reduce((s, i) => s + itemCost(i), 0);
+  const title = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(new Date(ym + '-15T12:00'));
+  haptic();
+  openSheet({
+    title: title.charAt(0).toUpperCase() + title.slice(1),
+    size: 'large',
+    left: { label: 'Fechar' },
+    render: () => `
+      <div class="sheet-hero"><div class="sh-value num ${cls(profit)}">${signed(profit)}</div>
+        <div class="sh-label">Lucro de ${sold.length} ${sold.length === 1 ? 'venda' : 'vendas'}</div></div>
+      <div class="tiles" style="grid-template-columns:1fr 1fr">
+        ${tile('Vendas', eur(sales), `${sold.length} artigos`, { ic: 'tag', color: 'var(--green)' })}
+        ${tile('Compras', eur(spent), `${bought.length} artigos`, { ic: 'cart', color: 'var(--orange)' })}
+      </div>
+      ${sold.length ? `<div class="section"><div class="section-header">Vendas</div><div class="list">
+        ${sold.map((it) => { const p = itemProfit(it); return `<button class="row" data-act="open-item" data-id="${it.id}">
+          <div class="body"><div class="title">${esc(it.name)}</div><div class="sub num">${[fmtDate(it.saleDate), it.platform, `${eur(itemCost(it))} → ${eur(it.salePrice)}`].filter(Boolean).join(' · ')}</div></div>
+          <div class="right num ${cls(p)}" style="font-weight:600">${signed(p)}</div></button>`; }).join('')}
+      </div></div>` : ''}
+      ${bought.length ? `<div class="section"><div class="section-header">Compras</div><div class="list">
+        ${bought.map((it) => `<button class="row" data-act="open-item" data-id="${it.id}">
+          <div class="body"><div class="title">${esc(it.name)}</div><div class="sub num">${fmtDate(it.buyDate)}</div></div>
+          <div class="right num" style="color:var(--label-2)">${eur(itemCost(it))}</div></button>`).join('')}
+      </div></div>` : ''}
+      ${!sold.length && !bought.length ? '<div class="empty-state">Sem vendas nem compras neste mês.</div>' : ''}`,
+  });
+}
+on('month-open', (el) => openMonth(el.dataset.month));
 
 function itemRows(list) {
   return list.map((it) => {

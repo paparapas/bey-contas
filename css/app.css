@@ -415,3 +415,7 @@ button.tile:active { transform: scale(0.96); }
 }
 .chip.sm { height: 30px; padding: 0 12px; font-size: 14px; }
 .row-wrap[data-dir="right"] .swipe-actions.left, .row-wrap[data-dir="left"] .swipe-actions.right { visibility: hidden; }
+.month-chart .val { font-size: 9px; font-weight: 600; fill: var(--label); }
+.month-chart .yr { font-size: 9px; fill: var(--label-3); }
+.month-chart .bar { cursor: pointer; }
+.month-chart .bar:active rect:not([fill="transparent"]) { opacity: 0.6; }

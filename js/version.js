@@ -1,8 +1,16 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.6';
+export const APP_VERSION = '1.7';
 
 export const CHANGELOG = [
+  {
+    version: '1.7', date: '2026-10-31',
+    notes: [
+      'Exportar para Excel (.xlsx) em Mais › Dados, no formato da folha original, com totais em fórmulas e folhas por mês, plataformas, encomendas e coleção.',
+      'Gráfico Lucro por mês com mês, ano e valor de cada barra; toca num mês para ver as vendas e compras.',
+      'Os meses sem movimento também aparecem no gráfico.',
+    ],
+  },
   {
     version: '1.6', date: '2026-10-31',
     notes: [
