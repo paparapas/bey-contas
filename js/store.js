@@ -141,4 +141,52 @@ export function wipe() {
   state.deleted = {};
   state.settings = stateDefaults().settings;
   commit();
+  if (db) kv('readwrite', (s) => s.getAllKeys()).then((keys) => keys.filter((k) => String(k).startsWith('photo:')).forEach((k) => kv('readwrite', (s) => s.delete(k))));
+  photoCache.clear();
+}
+
+// ---------- Photos ----------
+// Collection photos are kept apart from the main state (one key per photo) so
+// saving a price change doesn't rewrite every image. A collection entry with a
+// photo has `photoAt` (when the photo was set); backups carry the photos and an
+// imported photo is used only when its entry won the merge.
+
+const photoCache = new Map(); // id -> data URL
+
+export async function getPhoto(id) {
+  if (photoCache.has(id)) return photoCache.get(id);
+  if (!db) return null;
+  const url = (await kv('readonly', (s) => s.get(`photo:${id}`))) || null;
+  if (url) photoCache.set(id, url);
+  return url;
+}
+export async function putPhoto(id, dataUrl) {
+  photoCache.set(id, dataUrl);
+  if (db) await kv('readwrite', (s) => s.put(dataUrl, `photo:${id}`));
+}
+export async function deletePhoto(id) {
+  photoCache.delete(id);
+  if (db) await kv('readwrite', (s) => s.delete(`photo:${id}`));
+}
+
+/** Backup including the photos of collection entries. */
+export async function exportFull() {
+  const data = exportData();
+  const photos = {};
+  for (const c of state.collection) if (c.photoAt) { const p = await getPhoto(c.id); if (p) photos[c.id] = p; }
+  return { ...data, photos };
+}
+
+/** After merge(): store incoming photos whose entry version won, drop photos of deleted entries. */
+export async function mergePhotos(data) {
+  let n = 0;
+  const incoming = new Map((data.collection || []).map((c) => [c.id, c]));
+  for (const [id, url] of Object.entries(data.photos || {})) {
+    const local = state.collection.find((c) => c.id === id), inc = incoming.get(id);
+    if (local && inc && local.photoAt && local.photoAt === inc.photoAt) { await putPhoto(id, url); n++; }
+  }
+  for (const key of Object.keys(state.deleted)) {
+    if (key.startsWith('collection:')) { const id = key.slice(11); if (!state.collection.some((c) => c.id === id)) await deletePhoto(id); }
+  }
+  return n;
 }

@@ -1,12 +1,12 @@
 // Offline cache. Bump VERSION on every release so installed apps update.
-const VERSION = '1.8'; // keep equal to APP_VERSION in js/version.js
+const VERSION = '1.9'; // keep equal to APP_VERSION in js/version.js
 const SHELL = `shell-${VERSION}`;
 const RUNTIME = 'runtime';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/app.js', 'js/version.js', 'js/viewport.js', 'js/migrations.js', 'js/xlsx.js', 'js/export-excel.js', 'js/store.js', 'js/calc.js', 'js/ui.js', 'js/nav.js', 'js/item-sheet.js',
+  'js/app.js', 'js/version.js', 'js/viewport.js', 'js/migrations.js', 'js/xlsx.js', 'js/export-excel.js', 'js/cutout.js', 'js/store.js', 'js/calc.js', 'js/ui.js', 'js/nav.js', 'js/item-sheet.js',
   'js/views/resumo.js', 'js/views/artigos.js', 'js/views/colecao.js', 'js/views/calculadora.js', 'js/views/mais.js',
-  'data/parts.json', 'img/icon-180.png', 'img/icon-192.png', 'img/icon-512.png',
+  'data/parts.json', 'data/skins.json', 'img/icon-180.png', 'img/icon-192.png', 'img/icon-512.png',
 ];
 
 self.addEventListener('install', (e) => {

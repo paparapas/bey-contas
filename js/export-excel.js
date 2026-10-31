@@ -102,19 +102,19 @@ function ordersSheet() {
 }
 
 function collectionSheet() {
-  const list = [...state.collection].sort((a, b) => (a.type || '').localeCompare(b.type || '') || a.name.localeCompare(b.name));
+  const list = [...state.collection].sort((a, b) => (a.type || '').localeCompare(b.type || '') || (a.name || '').localeCompare(b.name || '') || (a.skinName || '').localeCompare(b.skinName || ''));
   const last = Math.max(4, list.length + 3);
   const rows = [
     [{ v: 'Valor total', s: S.bold }, { f: `SUM(E4:E${last})`, v: r2(collectionValue()), s: S.eurBold }],
     [{ v: 'Peças', s: S.bold }, { f: `SUM(C4:C${last})`, v: list.reduce((s, c) => s + (c.qty || 1), 0), s: S.int }],
-    head(['Peça', 'Tipo', 'Quantidade', 'Valor aprox. (cada)', 'Valor total', 'Estado', 'Notas']),
+    head(['Peça', 'Tipo', 'Quantidade', 'Valor aprox. (cada)', 'Valor total', 'Estado', 'Notas', 'Skin']),
   ];
   list.forEach((c, i) => {
     const r = i + 4;
     rows.push([c.name, TYPES[c.type] || c.type, { v: c.qty || 1, s: S.int }, eur(c.price || 0),
-      { f: `C${r}*D${r}`, v: r2((c.price || 0) * (c.qty || 1)), s: S.eur }, c.condition === 'usado' ? 'Usado' : 'Novo', c.notes || null]);
+      { f: `C${r}*D${r}`, v: r2((c.price || 0) * (c.qty || 1)), s: S.eur }, c.condition === 'usado' ? 'Usado' : 'Novo', c.notes || null, c.skinName || (c.skinKey ? null : 'Sem skin definida')]);
   });
-  return { name: 'Coleção', rows, freezeRow: 3, cols: [28, 14, 11, 18, 14, 10, 30] };
+  return { name: 'Coleção', rows, freezeRow: 3, cols: [28, 14, 11, 18, 14, 10, 30, 30] };
 }
 
 function reviewSheet() {

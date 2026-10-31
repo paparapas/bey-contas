@@ -419,3 +419,16 @@ button.tile:active { transform: scale(0.96); }
 .month-chart .yr { font-size: 9px; fill: var(--label-3); }
 .month-chart .bar { cursor: pointer; }
 .month-chart .bar:active rect:not([fill="transparent"]) { opacity: 0.6; }
+
+/* Collection photos */
+.photo-box { margin: 0 16px 16px; height: 220px; border-radius: 16px; display: grid; place-items: center; overflow: hidden;
+  background-color: var(--card); background-image: linear-gradient(45deg, var(--fill) 25%, transparent 25%), linear-gradient(-45deg, var(--fill) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--fill) 75%), linear-gradient(-45deg, transparent 75%, var(--fill) 75%);
+  background-size: 18px 18px; background-position: 0 0, 0 9px, 9px -9px, -9px 0; }
+.photo-box img { max-width: 92%; max-height: 92%; object-fit: contain; }
+.photo-box.big { height: 300px; }
+.photo-box.small { height: 140px; }
+.part-cell .skin-name { font-size: 11px; color: var(--label-2); text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skin-thumb { display: grid; place-items: center; overflow: hidden; }
+.skin-thumb.missing img { opacity: 0.35; filter: grayscale(1); }
+a.row { text-decoration: none; }
+input[type="range"] { accent-color: var(--blue); }

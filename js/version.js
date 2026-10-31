@@ -1,8 +1,17 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.8';
+export const APP_VERSION = '1.9';
 
 export const CHANGELOG = [
+  {
+    version: '1.9', date: '2026-10-31',
+    notes: [
+      'Coleção por skins: cada peça mostra as skins conhecidas (lançamentos e versões de cor, lista da Beyblade Wiki) e marcas as que tens.',
+      'Fotos tuas em cada skin, com o fundo removido no próprio telemóvel; ficam incluídas na cópia de segurança.',
+      'Sessão de fotos: fotografa, escolhe a peça e a skin, passa à seguinte.',
+      'O Excel exportado inclui a skin de cada peça da coleção.',
+    ],
+  },
   {
     version: '1.8', date: '2026-10-31',
     notes: [

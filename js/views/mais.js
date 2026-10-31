@@ -1,5 +1,5 @@
 // "Mais" tab: orders, review inbox, exchange rate / VAT, backup & sync.
-import { state, upsert, remove, find, exportData, merge, setSettings, wipe, commit } from '../store.js';
+import { state, upsert, remove, find, exportFull, merge, mergePhotos, setSettings, wipe, commit } from '../store.js';
 import { orderTotals, orderShare, itemCost, reviewCount, SOURCES, round2 } from '../calc.js';
 import { icon, eur, jpy, esc, on, seg, segTap, openSheet, toast, haptic, actionSheet, confirmDestructive, shareFile, pickFile, parseNum, numIn, fmtDate, today, ago } from '../ui.js';
 import { registerView, go, back, refresh, switchTab } from '../nav.js';
@@ -333,6 +333,7 @@ export async function importBackup() {
     }
     const r = merge(data);
     migrateStockRule(); // an old Excel import file gets the current stock rule too
+    await mergePhotos(data);
     haptic('success');
     toast(r.added + r.updated + r.removed ? `${r.added} novos · ${r.updated} atualizados · ${r.removed} apagados` : 'Já estava tudo igual', { ms: 4000 });
   } catch (e) {
@@ -366,7 +367,7 @@ registerView('dados', {
 });
 on('backup-share', async () => {
   const name = `bey-contas-${today()}.json`;
-  const res = await shareFile(name, JSON.stringify(exportData()));
+  const res = await shareFile(name, JSON.stringify(await exportFull()));
   if (res !== 'cancelled') { setSettings({ lastBackup: Date.now() }); toast(res === 'shared' ? 'Cópia partilhada' : 'Cópia descarregada'); }
 });
 on('import-backup', () => importBackup());
