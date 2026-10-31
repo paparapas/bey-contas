@@ -1,8 +1,16 @@
 // App version shown in Mais › Versão. On every release bump APP_VERSION here
 // AND `VERSION` in sw.js, and add an entry on top of CHANGELOG.
-export const APP_VERSION = '1.7';
+export const APP_VERSION = '1.8';
 
 export const CHANGELOG = [
+  {
+    version: '1.8', date: '2026-10-31',
+    notes: [
+      'Gráfico de vendas com escolha entre Lucro, Valor vendido e Nº de vendas.',
+      'Novo gráfico de compras por mês: Valor gasto ou Nº de compras.',
+      'A escolha de cada gráfico fica guardada no dispositivo.',
+    ],
+  },
   {
     version: '1.7', date: '2026-10-31',
     notes: [

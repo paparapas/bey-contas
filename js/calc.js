@@ -76,16 +76,16 @@ export function kpis() {
   };
 }
 
-/** [['YYYY-MM', { sales, profit, spent, n }], …] for every month from the first to the last with data (empty months included). */
+/** [['YYYY-MM', { sales, profit, spent, n (sales), nb (purchases) }], …] for every month from the first to the last with data (empty months included). */
 export function monthly() {
   const map = new Map();
-  const get = (k) => { if (!map.has(k)) map.set(k, { sales: 0, profit: 0, spent: 0, n: 0 }); return map.get(k); };
+  const get = (k) => { if (!map.has(k)) map.set(k, { sales: 0, profit: 0, spent: 0, n: 0, nb: 0 }); return map.get(k); };
   for (const it of state.items) {
     if (it.status === 'sold' && it.saleDate) {
       const m = get(it.saleDate.slice(0, 7));
       m.sales += itemNet(it); m.profit += itemProfit(it); m.n++;
     }
-    if (it.buyDate) get(it.buyDate.slice(0, 7)).spent += itemCost(it);
+    if (it.buyDate) { const m = get(it.buyDate.slice(0, 7)); m.spent += itemCost(it); m.nb++; }
   }
   const keys = [...map.keys()].sort();
   if (!keys.length) return [];
@@ -94,7 +94,7 @@ export function monthly() {
   const end = keys[keys.length - 1];
   for (;;) {
     const k = `${y}-${String(mo).padStart(2, '0')}`;
-    out.push([k, map.get(k) || { sales: 0, profit: 0, spent: 0, n: 0 }]);
+    out.push([k, map.get(k) || { sales: 0, profit: 0, spent: 0, n: 0, nb: 0 }]);
     if (k >= end) break;
     if (++mo > 12) { mo = 1; y++; }
   }

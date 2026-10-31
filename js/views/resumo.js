@@ -1,7 +1,7 @@
 import { state } from '../store.js';
 import { kpis, level, monthly, byPlatform, itemProfit, reviewCount, itemCost, itemNet, soldInMonth, boughtInMonth } from '../calc.js';
-import { icon, eur, eur0, signed, cls, pct, esc, fmtMonth, fmtDate, on, ago, haptic, openSheet } from '../ui.js';
-import { registerView, go, switchTab } from '../nav.js';
+import { icon, eur, eur0, signed, cls, pct, esc, fmtMonth, fmtDate, on, ago, haptic, openSheet, seg, segTap } from '../ui.js';
+import { registerView, go, switchTab, refresh } from '../nav.js';
 import { openItem } from '../item-sheet.js';
 import { importBackup, reinstallBanner } from './mais.js';
 
@@ -16,46 +16,74 @@ function tile(label, value, sub, { ic, color, valCls = '', act = '' } = {}) {
   </${tag}>`;
 }
 
-function monthChart() {
+// Chart metrics; the chosen one per chart is remembered on this device.
+const SALE_METRICS = [
+  { value: 'profit', label: 'Lucro', key: 'profit', money: true, signed: true, title: 'Lucro por mês' },
+  { value: 'sales', label: 'Valor', key: 'sales', money: true, color: 'var(--blue)', title: 'Valor vendido por mês' },
+  { value: 'n', label: 'Nº vendas', key: 'n', color: 'var(--teal)', title: 'Vendas por mês', unit: ['venda', 'vendas'] },
+];
+const BUY_METRICS = [
+  { value: 'spent', label: 'Valor', key: 'spent', money: true, color: 'var(--orange)', title: 'Gasto em compras por mês' },
+  { value: 'nb', label: 'Nº compras', key: 'nb', color: 'var(--purple)', title: 'Compras por mês', unit: ['compra', 'compras'] },
+];
+const pref = (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
+let saleMetric = pref('chart-sales', 'profit'), buyMetric = pref('chart-buys', 'spent');
+
+function monthChart(metrics, chosen, segName, hasData) {
   const data = monthly();
-  if (!data.some(([, m]) => m.sales)) {
-    return `<div class="chart"><div class="empty">${icon('chart')}<br>Ainda sem datas.<br><span style="font-size:13px">Adiciona datas de compra e venda aos artigos para veres a evolução mês a mês.</span></div></div>`;
+  const mt = metrics.find((m) => m.value === chosen) || metrics[0];
+  const head = `${seg(segName, metrics.map(({ value, label }) => ({ value, label })), mt.value, 'in-row')}`;
+  if (!data.some(([, m]) => hasData(m))) {
+    return `<div class="chart"><div style="display:flex;margin-bottom:10px">${head}</div><div class="empty">${icon('chart')}<br>Ainda sem datas.<br><span style="font-size:13px">Adiciona datas aos artigos para veres a evolução mês a mês.</span></div></div>`;
   }
   // Layout: value labels on top, bars, then month + year labels underneath.
   const W = 340, TOP = 16, H = 150, step = (W - 8) / data.length, bw = Math.min(22, step - 6);
-  const vals = data.map(([, m]) => m.profit);
+  const vals = data.map(([, m]) => m[mt.key]);
   const max = Math.max(1, ...vals.map(Math.abs));
   const hasNeg = vals.some((v) => v < 0);
   const zero = hasNeg ? TOP + (H - TOP) / 2 : H;
   const scale = (hasNeg ? (H - TOP) / 2 - 12 : H - TOP - 4) / max;
+  const colorOf = (v) => mt.color || (v >= 0 ? 'var(--green)' : 'var(--red)');
   const bars = data.map(([k, m], i) => {
+    const v = m[mt.key];
     const x = 4 + i * step + (step - bw) / 2, cx = x + bw / 2;
-    const h = m.profit ? Math.max(2, Math.abs(m.profit) * scale) : 0;
-    const y = m.profit >= 0 ? zero - h : zero;
+    const h = v ? Math.max(2, Math.abs(v) * scale) : 0;
+    const y = v >= 0 ? zero - h : zero;
     const [yy, mm] = k.split('-');
     const showYear = i === 0 || mm === '01';
-    const label = m.n ? `<text class="axis val" x="${cx}" y="${m.profit >= 0 ? y - 4 : y + h + 10}" text-anchor="middle">${Math.round(m.profit)}</text>` : '';
+    const label = v || hasData(m) ? `<text class="axis val" x="${cx}" y="${v >= 0 ? y - 4 : y + h + 10}" text-anchor="middle">${Math.round(v)}</text>` : '';
     return `<g class="bar" data-act="month-open" data-month="${k}">
       <rect x="${4 + i * step}" y="0" width="${step}" height="${H + 30}" fill="transparent"/>
-      ${h ? `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="4" fill="${m.profit >= 0 ? 'var(--green)' : 'var(--red)'}" style="transform-origin:${x}px ${zero}px;animation:barUp .8s cubic-bezier(.32,.72,0,1) ${i * 0.04}s both"/>` : ''}
+      ${h ? `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="4" fill="${colorOf(v)}" style="transform-origin:${x}px ${zero}px;animation:barUp .8s cubic-bezier(.32,.72,0,1) ${i * 0.04}s both"/>` : ''}
       ${label}
       <text class="axis" x="${cx}" y="${H + 13}" text-anchor="middle">${fmtMonth(k)}</text>
       ${showYear ? `<text class="axis yr" x="${cx}" y="${H + 25}" text-anchor="middle">${yy}</text>` : ''}
     </g>`;
   }).join('');
   const total = vals.reduce((a, b) => a + b, 0);
+  const totalTxt = mt.money ? (mt.signed ? signed(total) : eur(total)) : `${total} ${total === 1 ? mt.unit[0] : mt.unit[1]}`;
   return `<div class="chart">
+    <div style="display:flex;margin-bottom:10px">${head}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-      <span style="font-size:13px;color:var(--label-2);font-weight:500">Lucro por mês</span>
-      <span class="num ${cls(total)}" style="font-weight:600">${signed(total)}</span>
+      <span style="font-size:13px;color:var(--label-2);font-weight:500">${mt.title}</span>
+      <span class="num ${mt.signed ? cls(total) : ''}" style="font-weight:600">${totalTxt}</span>
     </div>
     <svg viewBox="0 0 ${W} ${H + 30}" class="month-chart">
       <style>@keyframes barUp{from{transform:scaleY(0)}}</style>
       <line class="grid" x1="0" x2="${W}" y1="${zero}" y2="${zero}"/>
       ${bars}
     </svg>
-    <div style="font-size:12px;color:var(--label-2);text-align:center;margin-top:2px">Toca num mês para ver as vendas</div></div>`;
+    <div style="font-size:12px;color:var(--label-2);text-align:center;margin-top:2px">Toca num mês para ver o detalhe</div></div>`;
 }
+
+function setMetric(el, which) {
+  segTap(el);
+  if (which === 'sales') saleMetric = el.dataset.value; else buyMetric = el.dataset.value;
+  try { localStorage.setItem(which === 'sales' ? 'chart-sales' : 'chart-buys', el.dataset.value); } catch { /* private mode */ }
+  setTimeout(refresh, 140);
+}
+on('chart-sales', (el) => setMetric(el, 'sales'));
+on('chart-buys', (el) => setMetric(el, 'buys'));
 
 // Sheet with one month's sales and purchases.
 function openMonth(ym) {
@@ -153,7 +181,8 @@ registerView('resumo', {
           ${tile('Vendas com lucro', pct(k.winRate), `${k.kept} guardados`, { ic: 'checkCircle', color: 'var(--green)' })}
         </div>
 
-        <div class="section">${monthChart()}</div>
+        <div class="section"><div class="section-header big">Vendas</div>${monthChart(SALE_METRICS, saleMetric, 'chart-sales', (m) => m.n > 0)}</div>
+        <div class="section"><div class="section-header big">Compras</div>${monthChart(BUY_METRICS, buyMetric, 'chart-buys', (m) => m.nb > 0)}</div>
 
         ${plats.length ? `<div class="section">
           <div class="section-header big">Plataformas</div>
